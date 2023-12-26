@@ -1,0 +1,3 @@
+If daylight savings time is not automatically being applied then the most likely cause is the dates have not been added to the JSON file "daylight_savings.json"
+and the file needs to be updated, this can either be done by TODO or by manually opening the json file and adding the dates for the years not currently supported
+if this is done manually make sure that the person preforming the task is familiar with json format as any mistakes could cause unpredictable behavour
