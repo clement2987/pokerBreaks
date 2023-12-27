@@ -1,6 +1,13 @@
 import datetime
 import json
 
+def load_settings():
+    """
+    opens settings.json and returns a dict object of the users chosen settings
+    """
+    with open("settings.json", "r") as file:
+        return json.load(file)
+
 def load_dst_dates():
     """
     opens the daylight_savings.json file to gain access to the start and end dates of daylight savings storred there
