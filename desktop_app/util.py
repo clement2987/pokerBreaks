@@ -3,13 +3,14 @@ import datetime
 import globals
 from helpers import get_gaming_day_base, hour_change, get_timestamp
 
-class Table():
+class Table(): #TODO add logic to handle a table being reopened
     def __init__(self, table_number, game, timestamp):
         self.table_number = table_number
         self.game = game
         self.breaks = list()
         self.opened = timestamp
         self.closed = None
+        # a variable starting point to facilitate the break sorters functionality as a tables breaks may not always be based on the time a table opened
         self.start_point = timestamp
 
     def __str__(self):
