@@ -3,14 +3,13 @@ import datetime
 import globals
 from helpers import get_gaming_day_base, hour_change, get_timestamp
 
-class Table(): #TODO add logic to handle a table being reopened
+class Table():
     def __init__(self, table_number, game, timestamp):
         self.table_number = table_number
         self.game = game
         self.breaks = list()
         self.opened = timestamp
         self.closed = None
-        # a variable starting point to facilitate the break sorters functionality as a tables breaks may not always be based on the time a table opened
         self.start_point = timestamp
 
     def __str__(self):
@@ -19,11 +18,49 @@ class Table(): #TODO add logic to handle a table being reopened
     def send_on_break(self, timestamp):
         self.breaks.append(timestamp)
 
+class Break_container():
+    def __init__(self, table, timestamp):
+        self.table = table
+        self.scadualed_break = timestamp
+        self.sent = False
+        self.anounced = False
+        self.chip_count = False
+        self.table_rolled = False
+        self.sign = False
+        self.called_back = False
+
+    def __str__(self):
+        return str(self.table)
+    
+    def send_on_scadualed_break(self):
+        self.table.send_on_break(self.scadualed_break)
+        self.sent = True
+    
+    def send_on_unscadualed_break(self):
+        #TODO add logic to find timestamp to the nearst break window and send on break at that time Should add a variable to settings that gets updated every window
+        self.sent = True
+    
+    def anounce(self):
+        self.anounced = True
+
+    def add_chip_count(self):
+        self.chip_count = True
+    
+    def role_table(self):
+        self.table_rolled = True
+
+    def update_sign(self):
+        self.sign = True
+
+    def call_back(self):
+        self.called_back = True
+
 
 class Break_sorter():
-    def __init__(self, date=0, location="melbourne"):
+    def __init__(self, date="2023-12-26", location="melbourne"):
         self.hours = dict()
-        self.base = get_gaming_day_base("2023-12-26", location)
+        self.date = date
+        self.base = get_gaming_day_base(date, location)
         self.top = self.base + globals.DAY
         dt_object = datetime.datetime.fromtimestamp(self.top)
         formatted_date = dt_object.strftime("%Y-%m-%d")
@@ -55,15 +92,20 @@ class Break_sorter():
             minute = dt_object.minute
             s = f"{hour:02d}:{minute:02d}-{n}"
             if s in self.hours:
-                self.hours[s].append(table)
+                container = Break_container(table, n)
+                self.hours[s].append(container)
             n+=globals.TOTAL_TIME
 
-    def remove_table_from_future_list(self, table, timestamp):
+    def remove_table_from_future_list(self, table, timestamp):        
         for time in self.hours.keys():
             if timestamp > float(time[6:]):
                 continue
-            if table in self.hours[time]:
-                self.hours[time].remove(table)
+            to_be_removed = list()
+            for container in self.hours[time]:
+                if container.table == table:
+                    to_be_removed.append(container)
+            for container in to_be_removed:
+                self.hours[time].remove(container)
 
     def recalculate_break(self, table):
         returned_from_break = max(table.breaks) + globals.BREAK_TIME

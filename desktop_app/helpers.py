@@ -74,7 +74,7 @@ def get_timestamp(date, location="melbourne", h=0, m=0):
     specific_date = datetime.datetime.strptime(date, '%Y-%m-%d')
     offset = get_offset(date, location)
 
-    # Create a new datetime object for 6 AM on the specified date
+    # Create a new datetime object for time on the specified date
     six_am_date = specific_date.replace(hour=h, minute=m, second=0)
     timezone = datetime.timezone(datetime.timedelta(hours=offset, minutes=0))
     six_am_date = six_am_date.replace(tzinfo=timezone)
@@ -91,5 +91,46 @@ def get_gaming_day_base(date, location):
     """
     return get_timestamp(date, location, h=6, m=0)
 
+
+
+def get_formatted_date():
+    # Get the current date and time
+    current_datetime = datetime.datetime.now()
+
+    # Check if the time is before 6 AM
+    if current_datetime.hour < 6:
+        # Subtract 1 day from the current date
+        current_datetime -= datetime.timedelta(days=1)
+
+    # Format the date as dd-mm-yyyy
+    formatted_date = current_datetime.strftime("%d-%m-%Y")
+    
+    return formatted_date
+
+def get_time_nearest_15():
+    # Get the current date and time
+    current_datetime = datetime.datetime.now()
+#TODO edit this function do work with any number of minutes as deturmined by settings
+    # Round the minutes to the nearest ten minutes
+    minutes = current_datetime.minute
+    nearest_min = round(minutes / 15) * 15
+    if nearest_min == 60:
+        current_datetime = current_datetime.replace(hour=current_datetime.hour + 1, minute=0)
+    else:
+        current_datetime = current_datetime.replace(minute=nearest_min, second=0, microsecond=0)
+
+    # Format the date as dd-mm-yyyy
+    formatted_time = current_datetime.strftime("%H:%M")
+    
+    return formatted_time
+
+def check_valid_date(date):
+    try:
+        datetime.datetime.strptime(date, '%Y-%m-%d')
+        return True
+    except ValueError:
+        return False
+
+
 if __name__=="__main__":
-    print(get_gaming_day_base("2023-12-26", "melbourne"))
+    print(get_gaming_day_base("2024/12/01", "melbourne"))

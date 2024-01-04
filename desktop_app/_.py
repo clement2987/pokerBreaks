@@ -94,15 +94,15 @@ class Break_sorter():
                 self.hours[s].append(table)
             n+=11700
 
-x  = Break_sorter()
-a = Table(1, get_gaming_day_base("2023-12-26", 11, 12, 0))
-b = Table(2, get_gaming_day_base("2023-12-26", 11, 12, 0))
-c = Table(3, get_gaming_day_base("2023-12-26", 11, 12, 30))
-d = Table(4, get_gaming_day_base("2023-12-26", 11, 13, 0))
-x.add_table(a)
-x.add_table(b)
-x.add_table(c)
-x.add_table(d)
+# x  = Break_sorter()
+# a = Table(1, get_gaming_day_base("2023-12-26", 11, 12, 0))
+# b = Table(2, get_gaming_day_base("2023-12-26", 11, 12, 0))
+# c = Table(3, get_gaming_day_base("2023-12-26", 11, 12, 30))
+# d = Table(4, get_gaming_day_base("2023-12-26", 11, 13, 0))
+# x.add_table(a)
+# x.add_table(b)
+# x.add_table(c)
+# x.add_table(d)
 # print(x)
 
 # class Break_sorter():
@@ -209,4 +209,57 @@ def get_offset(date, region="melbourne"):
                 return 11
         return 10
     
-print(get_offset("2023-12-29"))
+# print(get_offset("2023-12-29"))
+    
+
+import asyncio
+
+class RepeatedFunctionCaller:
+    def __init__(self):
+        self.loop = asyncio.get_event_loop()
+        self.task = None
+        self.n = 0
+
+    async def function_to_call(self):
+        while True:
+            self.n += 1
+            # Replace this with the function you want to call repeatedly
+            # print("This is the function being called every second")
+            await asyncio.sleep(1)
+
+    def start(self):
+        self.task = self.loop.create_task(self.function_to_call())
+
+    def stop(self):
+        if self.task:
+            self.task.cancel()
+            self.loop.run_until_complete(self.task)
+            self.task = None
+
+    def show(self):
+        print(self.n)
+
+async def main():
+    # Instantiate the RepeatedFunctionCaller
+    caller = RepeatedFunctionCaller()
+    
+    # Start calling the function every second asynchronously
+    caller.start()
+
+    # You can continue to input commands or perform other tasks here
+    while True:
+        user_input = input("Enter a command: ")
+        # Process user input or perform other operations
+        print(f"You entered: {user_input}")
+
+        if user_input == "t":
+            caller.show()
+        # For example, if the user types "exit", stop the caller and break the loop
+        if user_input.lower() == "exit":
+            caller.stop()
+            break
+
+    print("Exiting the program.")
+
+if __name__ == "__main__":
+    asyncio.run(main())

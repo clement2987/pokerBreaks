@@ -20,6 +20,11 @@ TIME_TO_THREE_AM = 75600
 
 TIME_TO_TWO_AM = 72000
 
+LOCATION = "melbourne"
+
+TABLES = settings['tables']
+GAMES = settings['game_type']
+
 
 if __name__=="__main__":
     print(TOTAL_TIME)
