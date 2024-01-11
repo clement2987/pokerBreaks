@@ -10,4 +10,5 @@ add settings and test if when settings are changed everything still works
 make sure daylight savings are being handled
 write function to generate report
 make sure state.json is being updated with every change
+find a way to create a file path to save the reports, the file path should be saved in settings.json and should be chosen by the user using the file explorer
 add to this file as I remember things

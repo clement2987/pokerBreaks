@@ -491,8 +491,19 @@ class App(customtkinter.CTk):
 
         with open("state.json", "w") as file:
             json.dump(state, file)
-        
 
+    def check_state(self):
+        try:
+            with open("state.txt", "r") as file:
+                content = file.read().strip()
+
+            if content == "yes":
+                self.load_state()
+        except FileNotFoundError:
+            return
+        
+    def load_state(self):
+        ...
 
 
 
