@@ -19,7 +19,7 @@ root = customtkinter.CTk()
 
 def r(display):
     display.configure(border_color="green")
-    print("button pressed")
+
     return
 
 root.title("learning custom tkinter")
@@ -36,8 +36,12 @@ for hour in x.hours.keys():
     if len(x.hours[hour]) > 0:
         n = 1
         for table in x.hours[hour]:
+            if n == 1:
+                table.send_on_scadualed_break()
             time_frame.grid_columnconfigure((0, 1, 2, 3, 4), minsize=15)
             rb = customtkinter.CTkRadioButton(time_frame, text="", state="disabled", height=10, width=10, border_width_unchecked=2)
+            if table.sent == True:
+                rb.configure(border_color="blue")
             rb.grid(row=n, column=0)
             customtkinter.CTkLabel(time_frame, text=f"table {table}", font=("Open Sans", 16)).grid(row=n, column=1)
             customtkinter.CTkButton(time_frame, text="Break", command=lambda d=rb: r(d), width=10).grid(row=n, column=3)

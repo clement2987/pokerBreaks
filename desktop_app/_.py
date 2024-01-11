@@ -212,54 +212,83 @@ def get_offset(date, region="melbourne"):
 # print(get_offset("2023-12-29"))
     
 
-import asyncio
+# import asyncio
 
-class RepeatedFunctionCaller:
-    def __init__(self):
-        self.loop = asyncio.get_event_loop()
-        self.task = None
-        self.n = 0
+# class RepeatedFunctionCaller:
+#     def __init__(self):
+#         self.loop = asyncio.get_event_loop()
+#         self.task = None
+#         self.n = 0
 
-    async def function_to_call(self):
-        while True:
-            self.n += 1
-            # Replace this with the function you want to call repeatedly
-            # print("This is the function being called every second")
-            await asyncio.sleep(1)
+#     async def function_to_call(self):
+#         while True:
+#             self.n += 1
+#             # Replace this with the function you want to call repeatedly
+#             # print("This is the function being called every second")
+#             await asyncio.sleep(1)
 
-    def start(self):
-        self.task = self.loop.create_task(self.function_to_call())
+#     def start(self):
+#         self.task = self.loop.create_task(self.function_to_call())
 
-    def stop(self):
-        if self.task:
-            self.task.cancel()
-            self.loop.run_until_complete(self.task)
-            self.task = None
+#     def stop(self):
+#         if self.task:
+#             self.task.cancel()
+#             self.loop.run_until_complete(self.task)
+#             self.task = None
 
-    def show(self):
-        print(self.n)
+#     def show(self):
+#         print(self.n)
 
-async def main():
-    # Instantiate the RepeatedFunctionCaller
-    caller = RepeatedFunctionCaller()
+# async def main():
+#     # Instantiate the RepeatedFunctionCaller
+#     caller = RepeatedFunctionCaller()
     
-    # Start calling the function every second asynchronously
-    caller.start()
+#     # Start calling the function every second asynchronously
+#     caller.start()
 
-    # You can continue to input commands or perform other tasks here
-    while True:
-        user_input = input("Enter a command: ")
-        # Process user input or perform other operations
-        print(f"You entered: {user_input}")
+#     # You can continue to input commands or perform other tasks here
+#     while True:
+#         user_input = input("Enter a command: ")
+#         # Process user input or perform other operations
+#         print(f"You entered: {user_input}")
 
-        if user_input == "t":
-            caller.show()
-        # For example, if the user types "exit", stop the caller and break the loop
-        if user_input.lower() == "exit":
-            caller.stop()
-            break
+#         if user_input == "t":
+#             caller.show()
+#         # For example, if the user types "exit", stop the caller and break the loop
+#         if user_input.lower() == "exit":
+#             caller.stop()
+#             break
 
-    print("Exiting the program.")
+#     print("Exiting the program.")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
+    
+
+
+
+# from util import Break_sorter, Break_container, Table
+# from helpers import get_timestamp
+
+# def main():
+#     date = input("what is todays date? format<YYYY-MM-DD>")
+#     location = input("what is the location?")
+#     main_break_sorter = Break_sorter(date, location)
+#     main_break_sorter.add_hours()
+#     while True:
+#         command = input("what are we doing? ")
+#         if command == "exit":
+#             break
+#         if command == "print":
+#             print(main_break_sorter)
+#         if command == "open table":
+#             t_number = int(input("table: "))
+#             t_game = input("game: ")
+#             t_hours = int(input("hour: "))
+#             t_min = int(input("minute: "))
+#             table = Table(t_number, t_game, get_timestamp(main_break_sorter.date, "melbourne", t_hours, t_min))
+#             main_break_sorter.add_table(table)
+
+# main()
+listy = ["a"]*8
+print(listy)

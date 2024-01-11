@@ -6,8 +6,11 @@ from helpers import get_gaming_day_base, hour_change, get_timestamp
 class Table():
     def __init__(self, table_number, game, timestamp):
         self.table_number = table_number
+        self.state = "open"
         self.game = game
         self.breaks = list()
+        self.log = dict()
+        self.log[timestamp] = f"opened as {game}"
         self.opened = timestamp
         self.closed = None
         self.start_point = timestamp
@@ -17,6 +20,15 @@ class Table():
     
     def send_on_break(self, timestamp):
         self.breaks.append(timestamp)
+        self.log[timestamp] = "sent on break"
+    
+    def close_table(self, timestamp):
+        self.state = "closed"
+        self.log[timestamp] = "closed"
+    
+    def reopen_table(self, timestamp, game):
+        self.state = "open"
+        self.log[timestamp] = f"opened as {game}"
 
 class Break_container():
     def __init__(self, table, timestamp):
@@ -59,12 +71,14 @@ class Break_container():
 class Break_sorter():
     def __init__(self, date="2023-12-26", location="melbourne"):
         self.hours = dict()
+        self.location = location
         self.date = date
         self.base = get_gaming_day_base(date, location)
         self.top = self.base + globals.DAY
         dt_object = datetime.datetime.fromtimestamp(self.top)
         formatted_date = dt_object.strftime("%Y-%m-%d")
-        self.change = hour_change(formatted_date, location)        
+        self.change = hour_change(formatted_date, location)
+        globals.TODAY = date     
 
     def __str__(self):
         output = ""

@@ -25,6 +25,8 @@ LOCATION = "melbourne"
 TABLES = settings['tables']
 GAMES = settings['game_type']
 
+TODAY = None
+
 
 if __name__=="__main__":
     print(TOTAL_TIME)

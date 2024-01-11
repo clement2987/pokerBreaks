@@ -1,5 +1,6 @@
 import datetime
 import json
+import globals
 
 def load_settings():
     """
@@ -107,9 +108,12 @@ def get_formatted_date():
     
     return formatted_date
 
-def get_time_nearest_15():
+def get_time_nearest_15(timestamp=False, dtime=None):
     # Get the current date and time
-    current_datetime = datetime.datetime.now()
+    if not dtime:
+        current_datetime = datetime.datetime.now()
+    else:
+        current_datetime = datetime.datetime.strptime(dtime, '%Y-%m-%d%H:%M')
 #TODO edit this function do work with any number of minutes as deturmined by settings
     # Round the minutes to the nearest ten minutes
     minutes = current_datetime.minute
@@ -118,11 +122,15 @@ def get_time_nearest_15():
         current_datetime = current_datetime.replace(hour=current_datetime.hour + 1, minute=0)
     else:
         current_datetime = current_datetime.replace(minute=nearest_min, second=0, microsecond=0)
+    
+    if timestamp:
+        return get_timestamp(current_datetime.strftime("%Y-%m-%d"), location=globals.LOCATION, h=current_datetime.hour, m=current_datetime.minute)
 
-    # Format the date as dd-mm-yyyy
+
     formatted_time = current_datetime.strftime("%H:%M")
     
     return formatted_time
+
 
 def check_valid_date(date):
     try:
@@ -130,7 +138,25 @@ def check_valid_date(date):
         return True
     except ValueError:
         return False
+    
+def get_date_time_from_timestamp(timestamp):
+    # Convert Unix timestamp to a datetime object
+    dt_object = datetime.datetime.fromtimestamp(timestamp)
+
+    # Format the datetime object as a string
+    formatted_date_time = dt_object.strftime('%d-%m-%Y %H:%M')  # Adjust format as needed
+
+    return formatted_date_time
+
+def get_time_from_timestamp(timestamp):
+    # Convert Unix timestamp to a datetime object
+    dt_object = datetime.datetime.fromtimestamp(timestamp)
+
+    # Format the datetime object as a string
+    formatted_date_time = dt_object.strftime('%H:%M')  # Adjust format as needed
+
+    return formatted_date_time
 
 
-if __name__=="__main__":
-    print(get_gaming_day_base("2024/12/01", "melbourne"))
+# if __name__=="__main__":
+#     # print(current_timestamp())
