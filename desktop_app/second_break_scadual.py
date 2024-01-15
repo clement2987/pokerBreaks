@@ -173,6 +173,12 @@ class App(customtkinter.CTk):
         error = customtkinter.CTkLabel(window, text="")
         error.pack()
 
+    def check_if_table_exists(self, number):
+        for table in self.tables:
+            if table.state == "closed" and table.table_number == number:
+                return table
+        return None
+
     def open_table(self):
         window = customtkinter.CTkToplevel(self)
         window.title("Open Table")
@@ -201,9 +207,16 @@ class App(customtkinter.CTk):
                 if check_valid_date(date) == False:
                     raise ValueError
                 timestamp = get_timestamp(date, globals.LOCATION, h=hour, m=minute)
-                table = Table(n, g, timestamp + gaming_date_offset)
+                
                 if tn in self.open_tables: 
                     error.configure(test="table is already open")
+                    return
+                temp = self.check_if_table_exists(n)
+                if temp:
+                    table = temp
+                    table.reopen_table(timestamp + gaming_date_offset, g)
+                else:
+                    table = Table(n, g, timestamp + gaming_date_offset)
                 if self.break_sorter:
                     self.break_sorter.add_table(table)
                 self.tables.append(table)
@@ -213,8 +226,7 @@ class App(customtkinter.CTk):
                 if len(self.closed_tables) > 0:
                     table_number.set(self.closed_tables[0])
                 self.refresh_app()
-            except ValueError:
-                pass
+            except ValueError as e:
                 error.configure(text="invalid date or time format, date must be <DD-MM-YYYY> and time must be <HH:MM>")
 
         label_1 = customtkinter.CTkLabel(window, text="Table number")
@@ -412,6 +424,7 @@ class App(customtkinter.CTk):
                 break
         if t == None:
             return
+        
         
         headding = customtkinter.CTkLabel(self.focused_table_frame, text=f"Table {n:02d}", font=("open sans", 16))
         headding.grid(row=0, column=0)

@@ -1,6 +1,6 @@
 # import tkinter as TK
 import datetime
-import time
+# import time
 
 # n = 0
 
@@ -290,5 +290,23 @@ def get_offset(date, region="melbourne"):
 #             main_break_sorter.add_table(table)
 
 # main()
-listy = ["a"]*8
-print(listy)
+def listy(time):
+    hour, minute = map(int, time.split(":"))
+    if hour > 5:
+        hour -= 6
+    else:
+        hour += 18
+    return (hour*4)+(minute//15)
+
+times = []
+minutes = ['00','15','30','45']
+for i in range(6, 24):
+    for minute in minutes:
+        times.append(f"{i:02d}:{minute}")
+for i in range(6):
+    for minute in minutes:
+        times.append(f"{i:02d}:{minute}")
+
+for t in times:
+    print(listy(t))
+

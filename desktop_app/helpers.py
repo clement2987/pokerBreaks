@@ -157,6 +157,18 @@ def get_time_from_timestamp(timestamp):
 
     return formatted_date_time
 
+def find_time_index(t):
+    """
+    Takes a time in the format HH:MM and returns the index of the time if all times were in a list
+    TODO make this work if times are a variable number
+    """
+    hour, minute = map(int, t.split(":"))
+    if hour > 5:
+        hour -= 6
+    else:
+        hour += 18
+    return (hour*4)+(minute//15)
+
 
 # if __name__=="__main__":
 #     # print(current_timestamp())

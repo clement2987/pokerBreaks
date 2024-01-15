@@ -11,4 +11,9 @@ make sure daylight savings are being handled
 write function to generate report
 make sure state.json is being updated with every change
 find a way to create a file path to save the reports, the file path should be saved in settings.json and should be chosen by the user using the file explorer
+when opening a table we should check if the table has been open previously and reopen it instead
+allow log to have a table closed then imediatly reopened
 add to this file as I remember things
+
+BUGS:
+lable in timeframs move to the cener of the widget when table is closed

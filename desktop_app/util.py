@@ -29,6 +29,10 @@ class Table():
     def reopen_table(self, timestamp, game):
         self.state = "open"
         self.log[timestamp] = f"opened as {game}"
+        self.start_point = timestamp
+        self.game = game
+        self.breaks.append(timestamp)
+        print("table opened no problem")
 
 class Break_container():
     def __init__(self, table, timestamp):
