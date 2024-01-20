@@ -1,7 +1,26 @@
 import datetime
+import requests
 
 import globals
 from helpers import get_gaming_day_base, hour_change, get_timestamp
+
+class Request_handler():
+    def __init__(self):
+        self.domain = globals.DOMAIN
+        self.key = globals.KEY
+
+    def login(self):
+        ...
+
+    def send_breaks(self, breaks):
+        url = self.domain + "/breaks"
+        message = {
+            "key": self.key,
+            "break_scadual": breaks
+        }
+        responce = requests.post(url, json=message)
+
+        print(responce)
 
 class Table():
     def __init__(self, table_number, game, timestamp):
@@ -20,19 +39,25 @@ class Table():
     
     def send_on_break(self, timestamp):
         self.breaks.append(timestamp)
+        if timestamp in self.log:
+            if self.log[timestamp] != "sent on break":
+                timestamp+=1
         self.log[timestamp] = "sent on break"
     
     def close_table(self, timestamp):
         self.state = "closed"
+        if timestamp in self.log:
+            timestamp+=1
         self.log[timestamp] = "closed"
     
     def reopen_table(self, timestamp, game):
-        self.state = "open"
-        self.log[timestamp] = f"opened as {game}"
+        self.state = "open"        
         self.start_point = timestamp
         self.game = game
         self.breaks.append(timestamp)
-        print("table opened no problem")
+        if timestamp in self.log:
+            timestamp+=1
+        self.log[timestamp] = f"opened as {game}"
 
 class Break_container():
     def __init__(self, table, timestamp):
@@ -103,6 +128,8 @@ class Break_sorter():
         self.current = n
 
     def add_table(self, table):
+        if table.state == "closed":
+            return
         n = table.start_point + globals.MAX_PLAY_TIME
         while n < self.top:
             dt_object = datetime.datetime.fromtimestamp(n)
@@ -154,6 +181,8 @@ class DLS_end_break_sorter(Break_sorter):
         self.current = n
 
     def add_table(self, table):
+        if table.state == "closed":
+            return
         n = table.start_point + globals.MAX_PLAY_TIME
         after_2 = False
         while n < self.top:
@@ -169,7 +198,8 @@ class DLS_end_break_sorter(Break_sorter):
             else:
                 s = f"{hour-1:02d}:{minute:02d}-{n}"
             if s in self.hours:
-                self.hours[s].append(table)
+                container = Break_container(table, n)
+                self.hours[s].append(container)
             n+=globals.TOTAL_TIME
 
 class DLS_start_break_sorter(Break_sorter):
@@ -190,6 +220,8 @@ class DLS_start_break_sorter(Break_sorter):
         self.current = n
 
     def add_table(self, table):
+        if table.state == "closed":
+            return
         n = table.start_point + globals.MAX_PLAY_TIME
         while n < self.top:
             dt_object = datetime.datetime.fromtimestamp(self.hour_difference(n))
@@ -197,7 +229,8 @@ class DLS_start_break_sorter(Break_sorter):
             minute = dt_object.minute
             s = f"{hour:02d}:{minute:02d}-{n}"
             if s in self.hours:
-                self.hours[s].append(table)
+                container = Break_container(table, n)
+                self.hours[s].append(container)
             n+=globals.TOTAL_TIME
 
 if __name__=="__main__":

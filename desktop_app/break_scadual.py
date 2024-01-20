@@ -1,15 +1,20 @@
 import customtkinter
 import tkinter
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from time import time
 import datetime
-import json
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
 
 customtkinter.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
-from util import Break_sorter, Table, Break_container
-from helpers import get_formatted_date, check_valid_date, get_time_nearest_15, get_timestamp, get_date_time_from_timestamp, get_time_from_timestamp, find_time_index
+from util import Break_sorter, Table, Break_container, DLS_end_break_sorter, DLS_start_break_sorter, Request_handler
+from helpers import get_formatted_date, check_valid_date, get_time_nearest_15, get_timestamp, get_date_time_from_timestamp, get_time_from_timestamp, find_time_index, save_state_json, load_state_json, get_gaming_day_base, add_days_to_date
 import globals
 
 
@@ -25,35 +30,47 @@ class App(customtkinter.CTk):
         self.closed_tables = globals.TABLES
         self.open_tables = list()
 
+        self.requests = Request_handler()
+
         # configure window
         self.title("Poker table break sorter")
-        self.geometry(f"{1100}x{640}")
+        self.geometry(f"{1150}x{640}")
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
 
         # create sidebar frame with widgets
-        self.sidebar_frame = customtkinter.CTkFrame(self, width=140, height=560, corner_radius=0)
+        button_width=170
+        self.sidebar_frame = customtkinter.CTkFrame(self, width=140, height=1630, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
-        self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Main Functions", font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Main Menu", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="Start break sorter", command=self.break_sorter_window)
+        self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Start break sorter", command=self.break_sorter_window)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="Open Table", command=self.open_table)
+        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Open Table", command=self.open_table)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
-        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, text="Save state", command=self.save_state)
+        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Close all tables", command=self.close_all_tables)
         self.sidebar_button_3.grid(row=4, column=0, padx=20, pady=10)
-        self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, text="Somthing else", command=None)
+        self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Generate report and close", command=self.report_and_close)
         self.sidebar_button_4.grid(row=5, column=0, padx=20, pady=10)
+        self.sidebar_button_5 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Generate report and roll", command=self.report_and_role)
+        self.sidebar_button_5.grid(row=6, column=0, padx=20, pady=10)
+        self.sidebar_button_6 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Quick close", command=self.destroy)
+        self.sidebar_button_6.grid(row=7, column=0, padx=20, pady=10)
+        self.sidebar_button_7 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Full close", command=self.close_app)
+        self.sidebar_button_7.grid(row=8, column=0, padx=20, pady=10)
+        self.sidebar_button_8 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="temp", command=self.send_table_list)
+        self.sidebar_button_8.grid(row=9, column=0, padx=20, pady=10)
 
         #create tabs
         self.tabs = customtkinter.CTkTabview(self, width=900, height=560)
         self.tabs.grid(row=0, column=1)
         self.tabs.add("dashboard")
         self.tabs.add("tables")
+        self.tabs.add("network")
         self.tabs.add("settings")
-        self.tabs.add("something else")
+        self.tabs.add("help")
 
         #dashboard
         self.tabs.tab("dashboard").grid_columnconfigure(0, minsize=590)
@@ -95,11 +112,63 @@ class App(customtkinter.CTk):
         self.focused_table_frame = customtkinter.CTkFrame(self.tabs.tab("tables"), width=580, height=400)
         self.focused_table_frame.grid(row=0, column=0)
 
+        # settings
+        self.tabs.tab("settings").grid_columnconfigure(0, minsize=200)
+        self.tabs.tab("settings").grid_columnconfigure(1, minsize=300)
+        self.tabs.tab("settings").grid_columnconfigure(2, minsize=300)
+        # self.tabs.tab("settings").grid_rowconfigure(0, minsize=400)
+        # self.tabs.tab("settings").grid_rowconfigure(1, minsize=150)
+
+        self.setting_button_0 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.browse_files)
+        self.setting_button_0.grid(row=0, column=0, pady=10)
+        self.setting_setting_0 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Destination folder for reports")
+        self.setting_setting_0.grid(row=0, column=1, pady=10)
+        self.setting_value_0 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=globals.settings['reports_file'])
+        self.setting_value_0.grid(row=0, column=2, pady=10)
+
+        self.setting_button_1 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.change_break_time)
+        self.setting_button_1.grid(row=1, column=0, pady=10)
+        self.setting_setting_1 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Break times")
+        self.setting_setting_1.grid(row=1, column=1, pady=10)
+        self.setting_value_1 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=f"{int(globals.settings['times']['break'])//60} minutes")
+        self.setting_value_1.grid(row=1, column=2, pady=10)
+
+        self.setting_button_2 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.change_play_time)
+        self.setting_button_2.grid(row=2, column=0, pady=10)
+        self.setting_setting_2 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Max time playing")
+        self.setting_setting_2.grid(row=2, column=1, pady=10)
+        self.setting_value_2 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=f"{int(globals.settings['times']['btwn_break'])//60} minutes")
+        self.setting_value_2.grid(row=2, column=2, pady=10)
+
+        self.setting_button_3 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.change_tables)
+        self.setting_button_3.grid(row=3, column=0, pady=10)
+        self.setting_setting_3 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Tables")
+        self.setting_setting_3.grid(row=3, column=1, pady=10)
+        self.setting_value_3 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=globals.settings['tables'], wraplength=300)
+        self.setting_value_3.grid(row=3, column=2, pady=10)
+
+        self.setting_button_4 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.change_games)
+        self.setting_button_4.grid(row=4, column=0, pady=10)
+        self.setting_setting_4 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Games")
+        self.setting_setting_4.grid(row=4, column=1, pady=10)
+        self.setting_value_4 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="".join(f" {game} " for game in globals.settings['game_type']), wraplength=300)
+        self.setting_value_4.grid(row=4, column=2, pady=10)
+
+        self.setting_button_5 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.change_domain)
+        self.setting_button_5.grid(row=5, column=0, pady=10)
+        self.setting_setting_5 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Network domain")
+        self.setting_setting_5.grid(row=5, column=1, pady=10)
+        self.setting_value_5 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=globals.settings['domain'])
+        self.setting_value_5.grid(row=5, column=2, pady=10)
+
+        self.check_state()
+
 
     def refresh_app(self):
         self.populate_timeframes()
         self.list_tables()
         self.populate_main_display(time())
+        self.save_state()
 
     def time_check(self):
         current_time = datetime.datetime.now().time()
@@ -219,9 +288,10 @@ class App(customtkinter.CTk):
                     table.reopen_table(timestamp + gaming_date_offset, g)
                 else:
                     table = Table(n, g, timestamp + gaming_date_offset)
+                    self.tables.append(table)
                 if self.break_sorter:
                     self.break_sorter.add_table(table)
-                self.tables.append(table)
+                
                 self.closed_tables.remove(tn)
                 self.open_tables.append(tn)
                 table_number.configure(values=self.closed_tables)
@@ -263,9 +333,12 @@ class App(customtkinter.CTk):
         error = customtkinter.CTkLabel(window, text="")
         error.pack()
 
-    def send_on_break(self, timestamp=None, break_container=None, table=None):
+    def send_on_break(self, timestamp=None, break_container=None, table=None, rrr=None):
+        if rrr:
+            rrr.configure(border_color="green")
         if break_container != None:
             break_container.send_on_scadualed_break()
+            self.save_state()
             return
         elif timestamp != None and table != None:
             table.send_on_break(timestamp)
@@ -298,6 +371,7 @@ class App(customtkinter.CTk):
             if len(children) > 1:
                 for widget in children[1:]:
                     widget.destroy()
+                time_frame.grid_columnconfigure((0, 1, 2, 3, 4), minsize=40)
 
     def populate_main_display(self, timestamp):
         if not self.break_sorter:
@@ -342,7 +416,7 @@ class App(customtkinter.CTk):
                     if table.sent:
                         rb.configure(border_color="green")
                     customtkinter.CTkLabel(time_frame, text=f"table {table}", font=("Open Sans", 16)).grid(row=n, column=1)
-                    customtkinter.CTkButton(time_frame, text="Break", command=lambda t=table: self.send_on_break(break_container=t), width=10).grid(row=n, column=3)
+                    customtkinter.CTkButton(time_frame, text="Break", command=lambda t=table, rad=rb: self.send_on_break(break_container=t, rrr=rad), width=10).grid(row=n, column=3)
                     time_frame.grid_rowconfigure(n, pad=10)
                     n+=1                    
 
@@ -369,6 +443,8 @@ class App(customtkinter.CTk):
         ...
 
     def close_table(self, table, timestamp):
+        if table.state == "closed":
+            return
         n = f"{table.table_number:02d}"
         table.close_table(timestamp)
         self.open_tables.remove(n)
@@ -493,8 +569,184 @@ class App(customtkinter.CTk):
             customtkinter.CTkButton(table_frame, text="focus", command=lambda n=table: self.focus_table(n), width=10).grid(row=0, column=1, padx=10)
             table_frame.pack(pady=5)
 
+
+
+
+    # settings
+    def browse_files(self):
+        file_path = filedialog.askdirectory(initialdir="/", title="Select Folder")
+
+        globals.settings["reports_file"] = file_path
+        globals.save_settings(globals.settings)
+        self.setting_value_0.configure(text=file_path)
+
+    def change_break_time(self):
+        while True:
+            dialog = customtkinter.CTkInputDialog(text="How many minutes is the break? Note break time must be evenly devisable by 60", title="Change break time")
+            responce = dialog.get_input()
+            if responce == None:
+                return
+            try:
+                break_time = int(responce.strip())
+                if 60%break_time != 0:
+                    continue
+                globals.settings['times']['break'] = str(break_time*60)
+                self.setting_value_1.configure(text=f"{int(globals.settings['times']['break'])//60} minutes")
+                globals.save_settings(globals.settings)
+                break
+
+            except ValueError:
+                continue
+
+    def change_play_time(self):
+        while True:
+            dialog = customtkinter.CTkInputDialog(text="How long can the table sat open for between breaks in minutes?", title="Change play time")
+            responce = dialog.get_input()
+            if responce == None:
+                return
+            try:
+                break_time = int(responce.strip())
+                
+                globals.settings['times']['btwn_break'] = str(break_time*60)
+                self.setting_value_2.configure(text=f"{int(globals.settings['times']['btwn_break'])//60} minutes")
+                globals.save_settings(globals.settings)
+                break
+
+            except ValueError:
+                continue
+
+    def change_domain(self):
+        dialog = customtkinter.CTkInputDialog(text="What is the new domain for the network", title="Change network domain")
+        responce = dialog.get_input()
+        globals.settings['domain'] = responce.strip()
+        globals.save_settings(globals.settings)
+        self.setting_value_5.configure(text=globals.settings['domain'])
+
+    def change_tables(self):
+        window = customtkinter.CTkToplevel(self)
+        window.title("Edit tables")
+        window.geometry("700x450")
+        window.grab_set()
+
+        def settings_remove_table():
+            to_be_removed = table_number.get()
+            globals.settings['tables'].remove(to_be_removed)
+            globals.save_settings(globals.settings)
+            table_number.configure(values=globals.settings['tables'])
+            table_number.set(globals.settings['tables'][0])
+
+        def settings_add_table():
+            to_be_added = add_table_entry.get()
+            try:
+                to_be_added = int(to_be_added)
+                to_be_added = f"{to_be_added:02d}"
+            except ValueError:
+                return
+            globals.settings['tables'].append(to_be_added)
+            globals.settings['tables'] = sorted(globals.settings['tables'])
+            globals.save_settings(globals.settings)
+            table_number.configure(values=globals.settings['tables'])
+
+        def close_window():
+            self.setting_value_3.configure(text=globals.settings['tables'])
+            window.destroy()
+
+        table_number = customtkinter.CTkOptionMenu(window, values=globals.settings['tables'])
+        table_number.pack(pady=20)
+        remove_button = customtkinter.CTkButton(window, text="remove table", command=settings_remove_table)
+        remove_button.pack(pady=10)
+
+        add_table_entry = customtkinter.CTkEntry(window, placeholder_text="table number")
+        add_table_entry.pack(pady=10)
+        add_button = customtkinter.CTkButton(window, text="add table", command=settings_add_table)
+        add_button.pack(pady=10)
+
+        close_button = customtkinter.CTkButton(window, text="close", command=close_window)
+        close_button.pack(pady=10)
+
+    def change_games(self):
+        window = customtkinter.CTkToplevel(self)
+        window.title("Edit games")
+        window.geometry("700x450")
+        window.grab_set()
+
+        def remove_game():
+            to_be_removed = table_number.get()
+            globals.settings['game_type'].remove(to_be_removed)
+            globals.save_settings(globals.settings)
+            table_number.configure(values=globals.settings['game_type'])
+            table_number.set(globals.settings['game_type'][0])
+
+        def add_game():
+            to_be_added = add_table_entry.get()
+            
+            globals.settings['game_type'].append(to_be_added)
+            globals.settings['game_type'] = sorted(globals.settings['game_type'])
+            globals.save_settings(globals.settings)
+            table_number.configure(values=globals.settings['game_type'])
+
+        def close_window():
+            self.setting_value_4.configure(text="".join(f" {game} " for game in globals.settings['game_type']))
+            window.destroy()
+
+        table_number = customtkinter.CTkOptionMenu(window, values=globals.settings['game_type'])
+        table_number.pack(pady=20)
+        remove_button = customtkinter.CTkButton(window, text="remove game", command=remove_game)
+        remove_button.pack(pady=10)
+
+        add_table_entry = customtkinter.CTkEntry(window, placeholder_text="game")
+        add_table_entry.pack(pady=10)
+        add_button = customtkinter.CTkButton(window, text="add game", command=add_game)
+        add_button.pack(pady=10)
+
+        close_button = customtkinter.CTkButton(window, text="close", command=close_window)
+        close_button.pack(pady=10)
+
+
+
+    #main function list
+
+    def close_all_tables(self):
+        timestamp = time()
+        for table in self.tables:
+            self.close_table(table, timestamp)
+
+    def report_and_close(self):
+        self.close_all_tables()
+        self.generate_report()
+        self.close_app()
+
+    def report_and_role(self):
+        self.generate_report()
+        self.roll_gaming_day()
+
+    def roll_gaming_day(self):
+        if self.break_sorter == None:
+            return
+        date = add_days_to_date(self.break_sorter.date, 1)
+        location = self.break_sorter.location
+        self.break_sorter = Break_sorter(date, location)
+        self.break_sorter.add_hours()
+        tables_to_remove = list()
+        for table in self.tables:
+            if table.state == "open":
+                table.log = dict()
+                table.log[get_gaming_day_base(date, location)] = "Table rolled from previous day"
+                self.break_sorter.add_table(table)
+            else:
+                tables_to_remove.append(table)
+        for table in tables_to_remove:
+            self.tables.remove(table)
+
+        self.refresh_app()
+        year, month, day = self.break_sorter.date.split('-')
+        s = f"{day}-{month}-{year}"
+        self.date_label.configure(text=s)
+
     def save_state(self):
         # create a small text file with a clue on wether we need to restore state from state.json
+        if not self.break_sorter:
+            return
         with open("state.txt", "w") as file:
             file.write("yes")
 
@@ -517,8 +769,9 @@ class App(customtkinter.CTk):
             ]
         }
 
-        with open("state.json", "w") as file:
-            json.dump(state, file)
+        save_state_json(state)
+
+        
 
     def check_state(self):
         try:
@@ -531,7 +784,100 @@ class App(customtkinter.CTk):
             return
         
     def load_state(self):
-        ...
+        state = load_state_json()
+        # recreate all tables from saved file
+        for table in state["tables"]:
+            app_table = Table(table["number"], table["game"], table["opened"])
+            if table["state"] == "closed":
+                app_table.state == "closed"
+            else:
+                string_number = f"{table['number']:02d}"
+                if string_number not in self.closed_tables:
+                    print(string_number, self.closed_tables)
+                self.closed_tables.remove(string_number)
+                self.open_tables.append(string_number)
+            app_table.start_point = table["start_point"]
+            app_table.breaks = table["breaks"]
+            for key in table["log"].keys():
+                real = float(key)
+                app_table.log[real] = table["log"][key]
+            self.tables.append(app_table)
+
+        # restore break sorter
+        self.break_sorter = Break_sorter(state["break sorter"]["date"], state["break sorter"]["location"])
+        self.break_sorter.add_hours()
+        if len(self.tables) > 0:
+            for table in self.tables:
+                self.break_sorter.add_table(table)
+        self.add_timeframes()
+        self.refresh_app()
+        self.date_label.configure(text=state["break sorter"]["date"])
+        self.populate_main_display(time())
+        self.time_check()
+
+    def close_app(self):
+        with open("state.txt", "w") as file:
+            file.write("no")
+            self.destroy()
+
+    def generate_report(self):
+        if self.break_sorter is None:
+            return
+
+        # Set filename and file path for the report output (TODO: Add global variable for the file path)
+        file_name = f"{globals.settings['reports_file']}/Table-break-report-{self.break_sorter.date}.pdf"
+
+        # Create a PDF document
+        pdf_document = SimpleDocTemplate(file_name, pagesize=letter)
+
+        # Content for the PDF
+        content = []
+
+        # Add date to the heading
+        styles = getSampleStyleSheet()
+        heading = Paragraph(f"<b>Report for {self.break_sorter.date}</b>", styles['Heading1'])
+        content.append(heading)
+
+        # Add table logs
+        styles.add(ParagraphStyle(name='TableHeading', fontSize=12, fontName='Helvetica-Bold'))
+        styles.add(ParagraphStyle(name='pdf_std', fontSize=12, fontName='Helvetica'))
+
+        for table in self.tables:
+            # Add table number as a subheading
+            table_heading = Paragraph(f"<b>Table 33{table.table_number:02d}</b>", styles['TableHeading'])
+            content.append(table_heading)
+
+            # Add log entries for the table
+            for timestamp, event in table.log.items():
+                log_entry = Paragraph(f"{get_date_time_from_timestamp(timestamp)}: {event}", styles['pdf_std'])
+                content.append(log_entry)
+
+            # Add some space between tables
+            content.append(Spacer(1, 15))
+
+        # Build the PDF document
+        pdf_document.build(content)
+
+    
+    # Network communication
+    def send_table_list(self):
+        
+        if self.break_sorter == None:
+            return
+        table_list = dict()
+        for hour in self.break_sorter.hours.keys():
+            table_list[f"{hour[:5]}"] = list()
+            for table in self.break_sorter.hours[hour]:
+                table_dict = {
+                    "number": table.table.table_number,
+                    "break_confirmed": table.sent
+                }
+                table_list[f"{hour[:5]}"].append(table_dict)
+        self.requests.send_breaks(table_list)
+        
+
+
+
 
 
 

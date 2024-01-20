@@ -1,4 +1,17 @@
-from helpers import load_settings
+import json
+
+def load_settings():
+    """
+    opens settings.json and returns a dict object of the users chosen settings
+    """
+    with open("settings.json", "r") as file:
+        return json.load(file)
+    
+def save_settings(settings):
+    with open("settings.json", "w") as file:
+        json.dump(settings, file, indent=4)
+
+import copy
 
 settings = load_settings()
 
@@ -22,10 +35,13 @@ TIME_TO_TWO_AM = 72000
 
 LOCATION = "melbourne"
 
-TABLES = settings['tables']
-GAMES = settings['game_type']
+TABLES = copy.deepcopy(settings['tables'])
+GAMES = copy.deepcopy(settings['game_type'])
 
 TODAY = None
+
+DOMAIN = 'http://127.0.0.1:8000/'
+KEY = "test_123"
 
 
 if __name__=="__main__":

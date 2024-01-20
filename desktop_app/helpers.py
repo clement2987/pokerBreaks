@@ -8,6 +8,10 @@ def load_settings():
     """
     with open("settings.json", "r") as file:
         return json.load(file)
+    
+def save_settings(settings):
+    with open("settings.json", "w") as file:
+        json.dump(settings, file, indent=4)
 
 def load_dst_dates():
     """
@@ -109,15 +113,16 @@ def get_formatted_date():
     return formatted_date
 
 def get_time_nearest_15(timestamp=False, dtime=None):
+    break_time = globals.BREAK_TIME // 60
     # Get the current date and time
     if not dtime:
         current_datetime = datetime.datetime.now()
     else:
         current_datetime = datetime.datetime.strptime(dtime, '%Y-%m-%d%H:%M')
-#TODO edit this function do work with any number of minutes as deturmined by settings
+
     # Round the minutes to the nearest ten minutes
     minutes = current_datetime.minute
-    nearest_min = round(minutes / 15) * 15
+    nearest_min = round(minutes / break_time) * break_time
     if nearest_min == 60:
         current_datetime = current_datetime.replace(hour=current_datetime.hour + 1, minute=0)
     else:
@@ -160,15 +165,37 @@ def get_time_from_timestamp(timestamp):
 def find_time_index(t):
     """
     Takes a time in the format HH:MM and returns the index of the time if all times were in a list
-    TODO make this work if times are a variable number
+
     """
+    break_time = globals.BREAK_TIME // 60
+    steps_in_hour = 60 // break_time
     hour, minute = map(int, t.split(":"))
     if hour > 5:
         hour -= 6
     else:
         hour += 18
-    return (hour*4)+(minute//15)
+    return (hour*steps_in_hour)+(minute//break_time)
 
+def save_state_json(state):
+    with open("state.json", "w") as file:
+            json.dump(state, file)
+
+def load_state_json():
+    try:
+        with open("state.json", "r") as file:
+            return json.load(file)
+    except FileExistsError:
+        return None
+    
+def add_days_to_date(input_date_str, n):
+    # Convert the input date string to a datetime object
+    input_date = datetime.datetime.strptime(input_date_str, "%Y-%m-%d")
+
+    # Add days to the date
+    new_date = input_date + datetime.timedelta(days=n)
+
+    # Convert the result back to a string
+    return new_date.strftime("%Y-%m-%d")
 
 # if __name__=="__main__":
 #     # print(current_timestamp())

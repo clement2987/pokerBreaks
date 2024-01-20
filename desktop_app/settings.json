@@ -36,10 +36,12 @@
         "30"
     ],
     "game_type": [
+        "10/20 NLH",
         "2/5 NLH",
-        "5/10 NLH",
         "2/5 PLO",
+        "5/10 NLH",
         "5/10 PLO"
-    ]
-    
+    ],
+    "reports_file": "E:/vs code/poker_breaks/reports",
+    "domain": "http://unknown"
 }

@@ -1,98 +1,98 @@
-# import tkinter as TK
-import datetime
-# import time
+# # import tkinter as TK
+# import datetime
+# # import time
 
-# n = 0
+# # n = 0
 
-# def main():
-#     print("main called")
+# # def main():
+# #     print("main called")
 
-# def task():
-#     print("it has been 30 seconds")
+# # def task():
+# #     print("it has been 30 seconds")
 
-# def check_time():
-#     current_time = datetime.datetime.now().time()
-#     if current_time.second in [5, 15, 30, 45]:
-#         task()
-#     main()
-#     root.after(1000, check_time)
+# # def check_time():
+# #     current_time = datetime.datetime.now().time()
+# #     if current_time.second in [5, 15, 30, 45]:
+# #         task()
+# #     main()
+# #     root.after(1000, check_time)
 
-# def add_text():
-#     global n
-#     n += 1
-#     label.config(text=f"button pressed {n} times")
+# # def add_text():
+# #     global n
+# #     n += 1
+# #     label.config(text=f"button pressed {n} times")
 
-# root = TK.Tk()
-# button = TK.Button(root, text="Press Me", command=add_text)
-# button.pack()
-# label = TK.Label(root, text="")
-# label.pack()
+# # root = TK.Tk()
+# # button = TK.Button(root, text="Press Me", command=add_text)
+# # button.pack()
+# # label = TK.Label(root, text="")
+# # label.pack()
 
-# check_time()
-# root.mainloop()
+# # check_time()
+# # root.mainloop()
 
-def get_gaming_day_base(date, offset, h=6, m=0):
-    """
-    takes the date and the desired time and calculates the timestamp 
-    (seconds since epoch <01/01/1970 00:00>) if the date. takes as 
-    arguments: the date in format "yyyy-mm-dd" and the offset for the
-    desired timezone. optional arguments for the time, h=hour and m=minute
-    time is 06:00 by default
-    """
-    specific_date = datetime.datetime.strptime(date, '%Y-%m-%d')
+# def get_gaming_day_base(date, offset, h=6, m=0):
+#     """
+#     takes the date and the desired time and calculates the timestamp 
+#     (seconds since epoch <01/01/1970 00:00>) if the date. takes as 
+#     arguments: the date in format "yyyy-mm-dd" and the offset for the
+#     desired timezone. optional arguments for the time, h=hour and m=minute
+#     time is 06:00 by default
+#     """
+#     specific_date = datetime.datetime.strptime(date, '%Y-%m-%d')
 
-    # Create a new datetime object for 6 AM on the specified date
-    six_am_date = specific_date.replace(hour=h, minute=m, second=0)
-    timezone = datetime.timezone(datetime.timedelta(hours=offset, minutes=0))
-    six_am_date = six_am_date.replace(tzinfo=timezone)
+#     # Create a new datetime object for 6 AM on the specified date
+#     six_am_date = specific_date.replace(hour=h, minute=m, second=0)
+#     timezone = datetime.timezone(datetime.timedelta(hours=offset, minutes=0))
+#     six_am_date = six_am_date.replace(tzinfo=timezone)
 
-    # Get the time difference in seconds since the epoch (January 1, 1970)
-    epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
-    seconds_since_epoch = (six_am_date - epoch).total_seconds()
+#     # Get the time difference in seconds since the epoch (January 1, 1970)
+#     epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+#     seconds_since_epoch = (six_am_date - epoch).total_seconds()
 
-    return seconds_since_epoch
+#     return seconds_since_epoch
 
-class Table():
-    def __init__(self, table_number, timestamp):
-        self.table_number = table_number
-        self.opened = timestamp
+# class Table():
+#     def __init__(self, table_number, timestamp):
+#         self.table_number = table_number
+#         self.opened = timestamp
 
-    def __str__(self):
-        return f"{self.table_number:02d}"
+#     def __str__(self):
+#         return f"{self.table_number:02d}"
 
 
-class Break_sorter():
-    def __init__(self):
-        self.hours = dict()
-        self.base = get_gaming_day_base("2023-12-26", 11)
-        self.top = self.base + 86400
-        n = self.base
-        while  n < self.top:
-            dt_object = datetime.datetime.fromtimestamp(n)
-            hour = dt_object.hour
-            minute = dt_object.minute
-            self.hours[f"{hour:02d}:{minute:02d}"] = list()
-            n+=900
-        self.current = n
+# class Break_sorter():
+#     def __init__(self):
+#         self.hours = dict()
+#         self.base = get_gaming_day_base("2023-12-26", 11)
+#         self.top = self.base + 86400
+#         n = self.base
+#         while  n < self.top:
+#             dt_object = datetime.datetime.fromtimestamp(n)
+#             hour = dt_object.hour
+#             minute = dt_object.minute
+#             self.hours[f"{hour:02d}:{minute:02d}"] = list()
+#             n+=900
+#         self.current = n
 
-    def __str__(self):
-        output = ""
-        for time in self.hours.keys():
-            output += f"{time}\n"
-            if len(self.hours[time]) > 0:
-                output += "    " + "\n    ".join(str(table) for table in self.hours[time]) + "\n"
-        return output
+#     def __str__(self):
+#         output = ""
+#         for time in self.hours.keys():
+#             output += f"{time}\n"
+#             if len(self.hours[time]) > 0:
+#                 output += "    " + "\n    ".join(str(table) for table in self.hours[time]) + "\n"
+#         return output
 
-    def add_table(self, table):
-        n = table.opened + 10800
-        while n < self.top:
-            dt_object = datetime.datetime.fromtimestamp(n)
-            hour = dt_object.hour
-            minute = dt_object.minute
-            s = f"{hour:02d}:{minute:02d}"
-            if s in self.hours:
-                self.hours[s].append(table)
-            n+=11700
+#     def add_table(self, table):
+#         n = table.opened + 10800
+#         while n < self.top:
+#             dt_object = datetime.datetime.fromtimestamp(n)
+#             hour = dt_object.hour
+#             minute = dt_object.minute
+#             s = f"{hour:02d}:{minute:02d}"
+#             if s in self.hours:
+#                 self.hours[s].append(table)
+#             n+=11700
 
 # x  = Break_sorter()
 # a = Table(1, get_gaming_day_base("2023-12-26", 11, 12, 0))
@@ -290,23 +290,117 @@ def get_offset(date, region="melbourne"):
 #             main_break_sorter.add_table(table)
 
 # main()
-def listy(time):
-    hour, minute = map(int, time.split(":"))
-    if hour > 5:
-        hour -= 6
-    else:
-        hour += 18
-    return (hour*4)+(minute//15)
+# def listy(time):
+#     hour, minute = map(int, time.split(":"))
+#     if hour > 5:
+#         hour -= 6
+#     else:
+#         hour += 18
+#     return (hour*4)+(minute//15)
 
-times = []
-minutes = ['00','15','30','45']
-for i in range(6, 24):
-    for minute in minutes:
-        times.append(f"{i:02d}:{minute}")
-for i in range(6):
-    for minute in minutes:
-        times.append(f"{i:02d}:{minute}")
+# times = []
+# minutes = ['00','15','30','45']
+# for i in range(6, 24):
+#     for minute in minutes:
+#         times.append(f"{i:02d}:{minute}")
+# for i in range(6):
+#     for minute in minutes:
+#         times.append(f"{i:02d}:{minute}")
 
-for t in times:
-    print(listy(t))
+# for t in times:
+#     print(listy(t))
 
+from reportlab.pdfgen import canvas
+from datetime import datetime, timedelta
+
+# class Table:
+#     def __init__(self, table_number, game, timestamp):
+#         self.table_number = table_number
+#         self.state = "open"
+#         self.game = game
+#         self.breaks = list()
+#         self.log = dict()
+#         self.log[timestamp] = f"opened as {game}"
+#         self.opened = timestamp
+#         self.closed = None
+#         self.start_point = timestamp
+
+# class ReportGenerator:
+#     def __init__(self, tables, date):
+#         self.tables = tables
+#         self.date = date
+#         self.pdf_filename = f"report_{date}.pdf"
+
+#     def generate_pdf(self):
+#         # Create a PDF document
+#         pdf_canvas = canvas.Canvas(self.pdf_filename)
+
+#         # Add the date to the heading
+#         pdf_canvas.setFont("Helvetica-Bold", 16)
+#         pdf_canvas.drawString(100, 750, f"Report for {self.date}")
+
+#         # Add tables and logs
+#         pdf_canvas.setFont("Helvetica", 12)
+#         y_position = 730  # Initial y-position for the first table
+
+#         for table in self.tables:
+#             # Add table number as a subheading
+#             y_position -= 20
+#             pdf_canvas.drawString(100, y_position, f"Table {table.table_number}:")
+
+#             # Add log entries for the table
+#             y_position -= 15
+#             for timestamp, log_entry in table.log.items():
+#                 y_position -= 15
+#                 pdf_canvas.drawString(120, y_position, f"{timestamp}: {log_entry}")
+
+#             # Add some space between tables
+#             y_position -= 15
+
+#         # Save the PDF
+#         pdf_canvas.save()
+
+#         print(f"PDF generated successfully: {self.pdf_filename}")
+
+# # Example usage
+# table1 = Table(1, "Poker", datetime.now())
+# table2 = Table(2, "Blackjack", datetime.now())
+
+# table1.log["123"] = "break"
+# table1.log["456"] = "break"
+# table1.log["678"] = "break"
+# table1.log["789"] = "closed"
+
+# tables_list = [table1, table2]
+# report_date = datetime.now().strftime("%Y-%m-%d")
+
+# report_generator = ReportGenerator(tables_list, report_date)
+# report_generator.generate_pdf()
+# Your input date string
+input_date_str = "2023-12-31"
+
+# Convert the input date string to a datetime object
+input_date = datetime.strptime(input_date_str, "%Y-%m-%d")
+
+# Add one day to the date
+new_date = input_date + timedelta(days=1)
+
+# Convert the result back to a string
+new_date_str = new_date.strftime("%Y-%m-%d")
+
+print(f"Original date: {input_date_str}")
+print(f"New date after adding one day: {new_date_str}")
+
+#  def add_table(self, table):
+#         if table.state == "closed":
+#             return
+#         n = table.start_point + globals.MAX_PLAY_TIME
+#         while n < self.top:
+#             dt_object = datetime.datetime.fromtimestamp(n)
+#             hour = dt_object.hour
+#             minute = dt_object.minute
+#             s = f"{hour:02d}:{minute:02d}-{n}"
+#             if s in self.hours:
+#                 container = Break_container(table, n)
+#                 self.hours[s].append(container)
+#             n+=globals.TOTAL_TIME
