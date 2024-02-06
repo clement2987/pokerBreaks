@@ -3,6 +3,7 @@ import tkinter
 from tkinter import messagebox, filedialog
 from time import time
 import datetime
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -21,6 +22,7 @@ import globals
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.check_password()
 
         #app tools
         self.break_sorter = None
@@ -31,9 +33,10 @@ class App(customtkinter.CTk):
         self.open_tables = list()
 
         self.requests = Request_handler()
+        self.network_connected = False
 
         # configure window
-        self.title("Poker table break sorter")
+        self.title("Poker BreakSync")
         self.geometry(f"{1150}x{640}")
 
         # configure grid layout (4x4)
@@ -60,8 +63,12 @@ class App(customtkinter.CTk):
         self.sidebar_button_6.grid(row=7, column=0, padx=20, pady=10)
         self.sidebar_button_7 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="Full close", command=self.close_app)
         self.sidebar_button_7.grid(row=8, column=0, padx=20, pady=10)
-        self.sidebar_button_8 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="temp", command=self.send_table_list)
-        self.sidebar_button_8.grid(row=9, column=0, padx=20, pady=10)
+        # self.sidebar_button_8 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="temp", command=self.send_table_list)
+        # self.sidebar_button_8.grid(row=9, column=0, padx=20, pady=10)
+        # self.sidebar_button_9 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="get breaks", command=self.get_breaks_from_server)
+        # self.sidebar_button_9.grid(row=10, column=0, padx=20, pady=10)
+        # self.sidebar_button_10 = customtkinter.CTkButton(self.sidebar_frame, width=button_width,  text="send recipt", command=self.send_activation_code)
+        # self.sidebar_button_10.grid(row=11, column=0, padx=20, pady=10)
 
         #create tabs
         self.tabs = customtkinter.CTkTabview(self, width=900, height=560)
@@ -97,7 +104,7 @@ class App(customtkinter.CTk):
         self.alerts = customtkinter.CTkFrame(self.tabs.tab("dashboard"), width=580, height=140)
         self.alerts.grid(row=1, column=0)
         self.alerts.pack_propagate(False)
-        self.alert = customtkinter.CTkLabel(self.alerts, text="No alerts, 200 okay", font=("Open Sans", 20), width=400, height=20)
+        self.alert = customtkinter.CTkLabel(self.alerts, text="No alerts", font=("Open Sans", 20), width=400, height=20)
         self.alert.pack(pady=10, expand=0)
 
         #tables
@@ -111,6 +118,30 @@ class App(customtkinter.CTk):
 
         self.focused_table_frame = customtkinter.CTkFrame(self.tabs.tab("tables"), width=580, height=400)
         self.focused_table_frame.grid(row=0, column=0)
+
+        #network
+        self.tabs.tab("network").grid_columnconfigure(0, minsize=590)
+        self.tabs.tab("network").grid_columnconfigure(1, minsize=300)
+        self.tabs.tab("network").grid_rowconfigure(0, minsize=400)
+        self.tabs.tab("network").grid_rowconfigure(1, minsize=150)
+
+        self.network_log = customtkinter.CTkScrollableFrame(self.tabs.tab("network"), label_text="Event log", height=380, width=500)
+        self.network_log.grid(row=0, column=0)
+
+        self.network_officers = customtkinter.CTkFrame(self.tabs.tab("network"), width=300, height=400)
+        self.network_officers.grid(row=0, column=1, sticky="nsew")
+        customtkinter.CTkButton(self.network_officers, text="Refresh", command=self.get_active_users).pack(pady=5)
+
+        self.network_status_frame = customtkinter.CTkFrame(self.tabs.tab("network"), width=580, height=140)
+        self.network_status_frame.grid(row=1, column=0)
+        self.network_status = customtkinter.CTkLabel(self.network_status_frame, text="disconected", font=("Open Sans", 20), width=400, height=20)
+        self.network_status.pack(pady=10, expand=0)
+
+        self.network_code = customtkinter.CTkFrame(self.tabs.tab("network"), height=110, width=300)
+        self.network_code.grid(row=1, column=1)
+        self.current_code = customtkinter.CTkLabel(self.network_code, text="")
+        self.current_code.pack()
+        customtkinter.CTkButton(self.network_code, text="Set Activation Code", command=self.send_activation_code).pack(pady=5)
 
         # settings
         self.tabs.tab("settings").grid_columnconfigure(0, minsize=200)
@@ -161,7 +192,79 @@ class App(customtkinter.CTk):
         self.setting_value_5 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=globals.settings['domain'])
         self.setting_value_5.grid(row=5, column=2, pady=10)
 
+        self.setting_button_6 = customtkinter.CTkButton(self.tabs.tab("settings"), text="change", command=self.change_password)
+        self.setting_button_6.grid(row=6, column=0, pady=10)
+        self.setting_setting_6 = customtkinter.CTkLabel(self.tabs.tab("settings"), text="Password")
+        self.setting_setting_6.grid(row=6, column=1, pady=10)
+        self.setting_value_6 = customtkinter.CTkLabel(self.tabs.tab("settings"), text=f"{self.get_password()[:20]}")
+        self.setting_value_6.grid(row=6, column=2, pady=10)
+
         self.check_state()
+
+    def check_password(self):
+        password_hash = self.get_password()
+        check_password = False
+        
+        while check_password == False:
+            dialog = customtkinter.CTkInputDialog(text="Type in a number:", title="Test", show='•')        
+            password = dialog.get_input()
+            if password == None:
+                exit()
+            check_password = check_password_hash(password_hash, password)
+            
+        return
+
+    def get_password(self):
+        with open("password.txt", 'r') as password_file:
+            password = password_file.read().strip()
+            return password
+        
+    def change_password(self):
+        window = customtkinter.CTkToplevel(self)
+        window.title("change password")
+        window.geometry("700x450")
+        window.grab_set()
+
+        def cancel():
+            window.destroy()
+
+        def change_password_now():
+            old_password_hash = self.get_password()
+            if check_password_hash(old_password_hash, old_password.get()) != True:
+                error.configure(text="incorrect password")
+                return
+            pass1 = new_password.get()
+            pass2 = re_new_password.get()
+            if pass1 != pass2:
+                error.configure(text="passwords do not match")
+                return
+            new_password_hash = generate_password_hash(pass1)
+            with open("password.txt", "w") as password_file:
+                password_file.write(new_password_hash)
+                error.configure(text="password changed successfully")
+
+        error = customtkinter.CTkLabel(window, text="")
+        error.pack(pady=10)
+
+        old_password_label = customtkinter.CTkLabel(window, text="old password")
+        old_password_label.pack(pady=10)
+        old_password = customtkinter.CTkEntry(window, show="•")
+        old_password.pack()
+
+        new_password_label = customtkinter.CTkLabel(window, text="new password")
+        new_password_label.pack(pady=10)
+        new_password = customtkinter.CTkEntry(window, show="•")
+        new_password.pack()
+
+        re_new_password_label = customtkinter.CTkLabel(window, text="re-type new password")
+        re_new_password_label.pack(pady=10)
+        re_new_password = customtkinter.CTkEntry(window, show="•")
+        re_new_password.pack()        
+
+        start_button = customtkinter.CTkButton(window, text="change password", command=change_password_now)
+        start_button.pack(pady=10)
+        cancel_button = customtkinter.CTkButton(window, text="cancel", command=cancel)
+        cancel_button.pack()
 
 
     def refresh_app(self):
@@ -169,6 +272,8 @@ class App(customtkinter.CTk):
         self.list_tables()
         self.populate_main_display(time())
         self.save_state()
+        if self.network_connected == True:
+            self.send_table_list()
 
     def time_check(self):
         current_time = datetime.datetime.now().time()
@@ -182,7 +287,7 @@ class App(customtkinter.CTk):
         if current_timestamp - self.break_sorter.base > globals.DAY:
             alert += "\nGaming does not match the current day"
         if alert == "":
-            self.alert.configure(text="No alerts, 200 okay")
+            self.alert.configure(text="No alerts")
         elif alert[0] == " ":
             self.alert.configure(text="The following tables are late for break"+alert)
         else:
@@ -190,9 +295,16 @@ class App(customtkinter.CTk):
         
         if current_time.minute in [0, 15, 30, 45]:
             self.populate_main_display(current_timestamp)
+
+
         
 
         self.after(1000, self.time_check)
+
+    def network_auto(self):
+        if self.network_connected == True:
+            self.get_breaks_from_server()
+        self.after(1000*300, self.network_auto)
 
     def break_sorter_window(self):
         window = customtkinter.CTkToplevel(self)
@@ -216,9 +328,12 @@ class App(customtkinter.CTk):
                     for table in self.tables:
                         self.break_sorter.add_table(table)
                 self.add_timeframes()
+                self.start_network_app()
                 self.refresh_app()
                 self.date_label.configure(text=s)
                 self.populate_main_display(time())
+                
+                self.network_auto()
                 self.time_check()
                 cancel()
             except ValueError:
@@ -403,6 +518,8 @@ class App(customtkinter.CTk):
         self.refresh_timeframes()
         if self.break_sorter == None:
             return
+        
+        self.table_break_buttons = dict()
         for hour in self.break_sorter.hours.keys():
             
             if len(self.break_sorter.hours[hour]) > 0:
@@ -416,7 +533,9 @@ class App(customtkinter.CTk):
                     if table.sent:
                         rb.configure(border_color="green")
                     customtkinter.CTkLabel(time_frame, text=f"table {table}", font=("Open Sans", 16)).grid(row=n, column=1)
-                    customtkinter.CTkButton(time_frame, text="Break", command=lambda t=table, rad=rb: self.send_on_break(break_container=t, rrr=rad), width=10).grid(row=n, column=3)
+                    break_button = customtkinter.CTkButton(time_frame, text="Break", command=lambda t=table, rad=rb: self.send_on_break(break_container=t, rrr=rad), width=10)
+                    break_button.grid(row=n, column=3)
+                    self.table_break_buttons[f"{hour[:5]}{table}"] = break_button
                     time_frame.grid_rowconfigure(n, pad=10)
                     n+=1                    
 
@@ -618,6 +737,8 @@ class App(customtkinter.CTk):
     def change_domain(self):
         dialog = customtkinter.CTkInputDialog(text="What is the new domain for the network", title="Change network domain")
         responce = dialog.get_input()
+        if responce == None:
+            return
         globals.settings['domain'] = responce.strip()
         globals.save_settings(globals.settings)
         self.setting_value_5.configure(text=globals.settings['domain'])
@@ -789,7 +910,7 @@ class App(customtkinter.CTk):
         for table in state["tables"]:
             app_table = Table(table["number"], table["game"], table["opened"])
             if table["state"] == "closed":
-                app_table.state == "closed"
+                app_table.state = "closed"
             else:
                 string_number = f"{table['number']:02d}"
                 if string_number not in self.closed_tables:
@@ -810,9 +931,13 @@ class App(customtkinter.CTk):
             for table in self.tables:
                 self.break_sorter.add_table(table)
         self.add_timeframes()
+        self.start_network_app()
         self.refresh_app()
-        self.date_label.configure(text=state["break sorter"]["date"])
-        self.populate_main_display(time())
+        full_date = state["break sorter"]["date"]
+        year, month, day = full_date.split("-")
+        self.date_label.configure(text=f"{day}-{month}-{year}")
+        self.populate_main_display(time())        
+        self.network_auto()
         self.time_check()
 
     def close_app(self):
@@ -824,7 +949,7 @@ class App(customtkinter.CTk):
         if self.break_sorter is None:
             return
 
-        # Set filename and file path for the report output (TODO: Add global variable for the file path)
+        # Set filename and file path for the report output
         file_name = f"{globals.settings['reports_file']}/Table-break-report-{self.break_sorter.date}.pdf"
 
         # Create a PDF document
@@ -860,10 +985,15 @@ class App(customtkinter.CTk):
 
     
     # Network communication
+    def log(self, item):
+        customtkinter.CTkLabel(self.network_log, text=item).pack()
+
+
     def send_table_list(self):
         
         if self.break_sorter == None:
             return
+        self.log("updating server with current state")
         table_list = dict()
         for hour in self.break_sorter.hours.keys():
             table_list[f"{hour[:5]}"] = list()
@@ -873,11 +1003,64 @@ class App(customtkinter.CTk):
                     "break_confirmed": table.sent
                 }
                 table_list[f"{hour[:5]}"].append(table_dict)
-        self.requests.send_breaks(table_list)
+        self.log(self.requests.send_breaks(table_list))
+
+    def get_breaks_from_server(self):
+        if self.break_sorter == None:
+            return
+        self.log("sending runner to check for break update")
+        response = self.requests.update_breaks_from_officers()
+        if response[0] == "new breaks attatched":
+            for table_break in response[1]:
+                t, n = table_break.split(" ")
+                n = int(n)
+                n = f"{n:02d}" #TODO this might be a problem
+                button = self.table_break_buttons.get(f"{t}{n}")
+
+                if button is not None:
+                    button.invoke()
+            self.send_recipt_to_server()
+        self.log("runners report:")
+        self.log(response[0])
+
+    def send_recipt_to_server(self):
+        if self.break_sorter == None:
+            return
+        self.log("runner returning to server to confirm receipt of breaks")
+        
+        self.log(self.requests.confirm_to_server())
+
+
+    def send_activation_code(self):
+        dialog = customtkinter.CTkInputDialog(text="what activation code do you want to use", title="Set activation code")
+        response = dialog.get_input()
+        if response == None:
+            return
+        self.log("sending activation code")
+        self.log(self.requests.set_code(response))
+        self.current_code.configure(text=response)
         
 
 
+    def get_active_users(self):
+        self.log("getting list of currently active users")
+        response = self.requests.get_active_users()
+        self.log(response[0])
+        if response[0] == "active users attached attatched":
+            self.network_officers.destroy()
+            self.network_officers = customtkinter.CTkFrame(self.tabs.tab("network"), width=300, height=400)
+            self.network_officers.grid(row=0, column=1, sticky="nsew")
+            customtkinter.CTkButton(self.network_officers, text="Refresh", command=self.get_active_users).pack(pady=5)
+            for user in response[1]:
+                customtkinter.CTkLabel(self.network_officers, text=user).pack(pady=5)
 
+    def start_network_app(self):
+        self.log("attempted to access server")
+        response = self.requests.login()
+        self.log(response)
+        if response == "App started successfully!":
+            self.network_status.configure(text="connected")
+            self.network_connected = True
 
 
 

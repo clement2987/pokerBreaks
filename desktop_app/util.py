@@ -10,7 +10,20 @@ class Request_handler():
         self.key = globals.KEY
 
     def login(self):
-        ...
+        url = self.domain + "/start_fresh"
+        message = {
+            "key": self.key,
+        }
+        try:
+            response = requests.post(url, json=message)
+
+            # Check the response status code
+            if response.status_code == 200:
+                return "App started successfully!"
+            else:
+                return f"Failed to start app. Status code: {response.status_code}"
+        except requests.RequestException as e:
+            return f"Error starting app: {e}"
 
     def send_breaks(self, breaks):
         url = self.domain + "/breaks"
@@ -18,9 +31,99 @@ class Request_handler():
             "key": self.key,
             "break_scadual": breaks
         }
-        responce = requests.post(url, json=message)
+        try:
+            response = requests.post(url, json=message)
 
-        print(responce)
+            # Check the response status code
+            if response.status_code == 200:
+                return "Breaks sent successfully!"
+            else:
+                return f"Failed to send breaks. Status code: {response.status_code}"
+                
+
+        except requests.RequestException as e:
+            return f"Error sending breaks: {e}"
+
+    def update_breaks_from_officers(self):
+        url = self.domain + "/getupdate"
+        message = {
+            "key": self.key,
+            "message": "update_breaks"
+        }
+
+        try:
+            response = requests.post(url, json=message)
+
+            # Check the response status code
+            if response.status_code == 200:
+                data = response.json()
+                if data["message"] == "no new breaks to report":
+                    return (data["message"], None)
+                new_breaks = data.get("new_breaks")
+                return (data["message"], new_breaks)
+            else:
+                return (f"Failed to send breaks. Status code: {response.status_code}", None)
+                
+
+        except requests.RequestException as e:
+            return (f"Error sending breaks: {e}", None)
+
+    def confirm_to_server(self):
+        url = self.domain + "/breaksreceived"
+        message = {
+            "key": self.key
+        }
+        try:
+            response = requests.post(url, json=message)
+            data = response.json()
+            # Check the response status code
+            if response.status_code == 200:
+                return data["message"]
+            else:
+                return f"{data['error']}: {response.status_code}"
+                
+
+        except requests.RequestException as e:
+            return f"Error sending breaks: {e}"
+        
+    def set_code(self, code):
+        url = self.domain + "/set_activation_code"
+        message = {
+            "key": self.key,
+            "code": code
+        }
+        try:
+            response = requests.post(url, json=message)
+            data = response.json()
+            # Check the response status code
+            if response.status_code == 200:
+                return data["message"]
+            else:
+                return f"{data['error']}: {response.status_code}"
+                
+
+        except requests.RequestException as e:
+            return f"Error sending activation code: {e}"
+        
+    def get_active_users(self):
+        url = self.domain + "/get_user_list"
+        message = {
+            "key": self.key,
+        }
+        try:
+            response = requests.post(url, json=message)
+            data = response.json()
+            # Check the response status code
+            if response.status_code == 200:
+                if data["message"] == "no users currently on":
+                    return (data["message"], None)
+                return (data["message"], data["active users"])
+            else:
+                return (f"{data['error']}: {response.status_code}", None)
+                
+
+        except requests.RequestException as e:
+            return (f"Error sending activation code: {e}", None)
 
 class Table():
     def __init__(self, table_number, game, timestamp):
@@ -138,6 +241,8 @@ class Break_sorter():
             s = f"{hour:02d}:{minute:02d}-{n}"
             if s in self.hours:
                 container = Break_container(table, n)
+                if n in table.breaks:
+                    container.sent = True
                 self.hours[s].append(container)
             n+=globals.TOTAL_TIME
 
