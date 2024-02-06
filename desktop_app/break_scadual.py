@@ -22,7 +22,7 @@ import globals
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        self.check_password()
+        # self.check_password()
 
         #app tools
         self.break_sorter = None
